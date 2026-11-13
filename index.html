@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Política de segurança: a página não pode carregar nem enviar nada para fora dela mesma. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0B5CAD">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Doses QT">
+<meta name="description" content="Calculadora de superfície corporal (Mosteller e DuBois) e de dose de carboplatina pela fórmula de Calvert. Não salva nem envia dados.">
+<title>Calculadora de doses de quimioterapia</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: #F4F6F8; color: #14202B;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+a { color: #0B5CAD; } a:hover { color: #083F78; }
+input:focus-visible, button:focus-visible { outline: 3px solid #F2A33A; outline-offset: 2px; }
+.pagina { max-width: 1120px; margin: 0 auto; padding: 40px 24px 56px; display: flex; flex-direction: column; gap: 28px; }
+h1 { margin: 0 0 8px; font-size: 2rem; line-height: 1.15; letter-spacing: -0.01em; }
+h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.sub { margin: 0; color: #4A5764; max-width: 720px; }
+.colunas { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.cartao { background: #FFFFFF; border: 1px solid #D5DBE1; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.paciente { flex: 1 1 320px; }
+.direita { flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+.campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rotulo { font-size: 0.875rem; font-weight: 600; }
+input[type="text"] {
+  width: 100%; height: 48px; padding: 0 14px; font: inherit; font-size: 1.0625rem;
+  color: #14202B; background: #FFFFFF; border: 1.5px solid #8A96A3; border-radius: 10px;
+}
+.grupo { border-top: 1px solid #D5DBE1; padding-top: 18px; display: flex; flex-direction: column; gap: 20px; }
+.grupo-titulo { margin: 0; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #4A5764; }
+.par { display: flex; gap: 8px; }
+.opcao {
+  flex: 1 1 0; min-height: 48px; font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer;
+  border-radius: 10px; border: 1.5px solid #8A96A3; background: #FFFFFF; color: #14202B;
+}
+.opcao[aria-pressed="true"] { background: #0B5CAD; border-color: #0B5CAD; color: #FFFFFF; }
+.secundario {
+  align-self: flex-start; min-height: 44px; padding: 0 18px; font: inherit; font-size: 0.9375rem; font-weight: 600;
+  cursor: pointer; border-radius: 10px; border: 1.5px solid #8A96A3; background: #FFFFFF; color: #14202B;
+}
+.linha { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+.linha > .campo { flex: 1 1 200px; }
+.marcar { flex: 2 1 280px; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 12px; font-size: 0.9375rem; line-height: 1.4; cursor: pointer; }
+.marcar input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: #0B5CAD; }
+.resultados { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.res { background: #F4F6F8; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.res-rotulo { font-size: 0.8125rem; font-weight: 600; color: #4A5764; }
+.res-valor { font-size: 2.25rem; font-weight: 700; line-height: 1.1; color: #0B5CAD; }
+.res-conta { font-size: 0.875rem; line-height: 1.45; color: #4A5764; overflow-wrap: anywhere; }
+.texto { margin: 0; font-size: 0.9375rem; color: #4A5764; }
+.avisos { background: #FFF3D1; border: 1px solid #C99A2E; border-radius: 14px; padding: 18px 24px; color: #5C3F00; }
+.avisos h2 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+.avisos ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 0.9375rem; line-height: 1.45; }
+footer { border-top: 1px solid #D5DBE1; padding-top: 20px; font-size: 0.875rem; line-height: 1.55; color: #4A5764; display: flex; flex-direction: column; gap: 12px; }
+footer h2 { font-size: 0.9375rem; font-weight: 700; color: #14202B; }
+footer ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+footer p { margin: 0; }
+[hidden] { display: none !important; }
+@media (max-width: 480px) { .pagina { padding: 24px 16px 40px; } h1 { font-size: 1.625rem; } .cartao { padding: 18px; } }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+<header>
+<h1>Calculadora de doses de quimioterapia</h1>
+<p class="sub">Superfície corporal (Mosteller ou DuBois) e dose de carboplatina pela fórmula de Calvert. Cada resultado mostra a conta feita, para conferência manual. Nenhum dado digitado é salvo ou enviado.</p>
+</header>
+
+<div class="colunas">
+
+<section class="cartao paciente" aria-labelledby="h-paciente">
+<h2 id="h-paciente">Dados do paciente</h2>
+<div class="campo">
+<label class="rotulo" for="peso">Peso (kg)</label>
+<input id="peso" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 70">
+</div>
+<div class="campo">
+<label class="rotulo" for="altura">Altura (cm)</label>
+<input id="altura" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 170">
+</div>
+<div class="grupo">
+<p class="grupo-titulo">Necessários só para Calvert</p>
+<div class="campo">
+<label class="rotulo" for="idade">Idade (anos)</label>
+<input id="idade" type="text" inputmode="numeric" autocomplete="off" placeholder="ex.: 60">
+</div>
+<div class="campo" role="group" aria-labelledby="l-sexo">
+<span class="rotulo" id="l-sexo">Sexo</span>
+<div class="par">
+<button type="button" class="opcao" id="sexoM" aria-pressed="false">Masculino</button>
+<button type="button" class="opcao" id="sexoF" aria-pressed="false">Feminino</button>
+</div>
+</div>
+<div class="campo">
+<label class="rotulo" for="creat">Creatinina sérica (mg/dL)</label>
+<input id="creat" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 0,9">
+</div>
+</div>
+<button type="button" class="secundario" id="limpar">Limpar tudo</button>
+</section>
+
+<div class="direita">
+
+<section class="cartao" aria-labelledby="h-sc">
+<h2 id="h-sc">Dose por superfície corporal</h2>
+<div class="linha">
+<div class="campo" role="group" aria-labelledby="l-formula" style="flex: 1 1 240px">
+<span class="rotulo" id="l-formula">Fórmula da superfície corporal</span>
+<div class="par">
+<button type="button" class="opcao" id="fMost" aria-pressed="true">Mosteller</button>
+<button type="button" class="opcao" id="fDub" aria-pressed="false">DuBois</button>
+</div>
+</div>
+<div class="campo">
+<label class="rotulo" for="dose">Dose prescrita (mg/m²)</label>
+<input id="dose" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 75">
+</div>
+</div>
+<div class="resultados" aria-live="polite">
+<div class="res">
+<span class="res-rotulo" id="scRotulo">Superfície corporal (Mosteller)</span>
+<span class="res-valor" id="scTxt">—</span>
+<span class="res-conta" id="scConta">Preencha peso e altura.</span>
+<span class="res-conta" id="scOutra"></span>
+</div>
+<div class="res">
+<span class="res-rotulo">Dose total</span>
+<span class="res-valor" id="doseTxt">—</span>
+<span class="res-conta" id="doseConta">Preencha peso, altura e dose.</span>
+</div>
+</div>
+</section>
+
+<section class="cartao" aria-labelledby="h-calvert">
+<div>
+<h2 id="h-calvert">Carboplatina — fórmula de Calvert</h2>
+<p class="texto" style="margin-top: 6px">Dose (mg) = AUC alvo × (TFG + 25). A TFG (taxa de filtração glomerular) é estimada pela depuração de creatinina de Cockcroft-Gault, com o peso real informado.</p>
+</div>
+<div class="linha">
+<div class="campo">
+<label class="rotulo" for="auc">AUC alvo (mg/mL·min)</label>
+<input id="auc" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 5">
+</div>
+<label class="marcar" for="cap">
+<input id="cap" type="checkbox" checked autocomplete="off">
+<span>Limitar a depuração de creatinina a 125 mL/min (recomendação da FDA, 2010)</span>
+</label>
+</div>
+<div class="resultados" aria-live="polite">
+<div class="res">
+<span class="res-rotulo">Depuração de creatinina (Cockcroft-Gault)</span>
+<span class="res-valor" id="clcrTxt">—</span>
+<span class="res-conta" id="clcrConta">Preencha peso, idade, sexo e creatinina.</span>
+</div>
+<div class="res">
+<span class="res-rotulo">Dose de carboplatina</span>
+<span class="res-valor" id="carboTxt">—</span>
+<span class="res-conta" id="carboConta">Preencha os dados acima e a AUC alvo.</span>
+</div>
+</div>
+</section>
+
+<section class="avisos" id="avisosBox" role="status" aria-labelledby="h-avisos" hidden>
+<h2 id="h-avisos">Atenção</h2>
+<ul id="avisosLista"></ul>
+</section>
+
+</div>
+</div>
+
+<footer>
+<h2>Fórmulas e fontes</h2>
+<ul>
+<li>Mosteller: SC (m²) = raiz quadrada de (altura em cm × peso em kg ÷ 3600). Mosteller RD. N Engl J Med 1987;317:1098. <a href="https://pubmed.ncbi.nlm.nih.gov/3657876/" target="_blank" rel="noopener noreferrer">PubMed 3657876</a></li>
+<li>DuBois: SC (m²) = 0,007184 × peso (kg) elevado a 0,425 × altura (cm) elevada a 0,725. Du Bois D, Du Bois EF. Arch Intern Med 1916;17:863 (reimpresso em Nutrition 1989;5:303, <a href="https://pubmed.ncbi.nlm.nih.gov/2520314/" target="_blank" rel="noopener noreferrer">PubMed 2520314</a>).</li>
+<li>Calvert: dose (mg) = AUC × (TFG + 25). Calvert AH et al. J Clin Oncol 1989;7:1748. <a href="https://pubmed.ncbi.nlm.nih.gov/2681557/" target="_blank" rel="noopener noreferrer">PubMed 2681557</a></li>
+<li>Cockcroft-Gault: (140 − idade) × peso ÷ (72 × creatinina), multiplicado por 0,85 se sexo feminino. Cockcroft DW, Gault MH. Nephron 1976;16:31. <a href="https://pubmed.ncbi.nlm.nih.gov/1244564/" target="_blank" rel="noopener noreferrer">PubMed 1244564</a></li>
+<li>Limite de 125 mL/min: comunicado da FDA sobre dose de carboplatina com creatinina padronizada por IDMS (2010); dose máxima = AUC × 150.</li>
+</ul>
+<p>As doses são calculadas com os valores sem arredondamento; só a exibição é arredondada. Esta página não salva nem transmite os valores digitados: eles existem apenas enquanto a página está aberta.</p>
+<p>Ferramenta de apoio ao cálculo, destinada a profissionais de saúde: não substitui a conferência do prescritor nem o protocolo institucional (arredondamentos, peso a utilizar, doses máximas).</p>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+// ===== CÁLCULO (função pura: recebe os valores digitados, devolve os textos) =====
+function num(s) {
+  var t = String(s == null ? "" : s).trim().replace(",", ".");
+  if (t === "") return NaN;
+  return Number(t);
+}
+function fmt(n, d) { return n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+function show(n) { return n.toLocaleString("pt-BR", { maximumFractionDigits: 4 }); }
+
+function calcular(v) {
+  var w = num(v.peso), h = num(v.altura), age = num(v.idade);
+  var cr = num(v.creat), dose = num(v.dose), auc = num(v.auc);
+  var avisos = [];
+  function bad(raw, x) { return String(raw).trim() !== "" && !(x > 0); }
+
+  if (bad(v.peso, w)) avisos.push("Peso inválido: digite um número maior que zero.");
+  if (bad(v.altura, h)) avisos.push("Altura inválida: digite um número maior que zero.");
+  if (bad(v.idade, age)) avisos.push("Idade inválida: digite um número maior que zero.");
+  if (bad(v.creat, cr)) avisos.push("Creatinina inválida: digite um número maior que zero.");
+  if (bad(v.dose, dose)) avisos.push("Dose inválida: digite um número maior que zero.");
+  if (bad(v.auc, auc)) avisos.push("AUC inválida: digite um número maior que zero.");
+  if (w > 0 && (w < 20 || w > 300)) avisos.push("Peso fora da faixa habitual (20 a 300 kg): confira o valor e a unidade.");
+  if (h > 0 && (h < 100 || h > 230)) avisos.push("Altura fora da faixa habitual (100 a 230 cm): confira se foi digitada em centímetros.");
+  if (cr > 15) avisos.push("Creatinina acima de 15: confira se o valor está em mg/dL (e não em µmol/L).");
+  if (age > 0 && age < 18) avisos.push("Cockcroft-Gault foi desenvolvida em adultos; não use este cálculo para menores de 18 anos.");
+  if (age >= 140) avisos.push("Idade inválida para a fórmula de Cockcroft-Gault.");
+  if (auc > 10) avisos.push("AUC acima de 10: confira o valor digitado.");
+
+  // Superfície corporal
+  var okSc = w > 0 && h > 0;
+  var most = okSc ? Math.sqrt(h * w / 3600) : NaN;                               // Mosteller
+  var dub = okSc ? 0.007184 * Math.pow(w, 0.425) * Math.pow(h, 0.725) : NaN;     // DuBois
+  var isMost = v.formula === "mosteller";
+  var sc = isMost ? most : dub;
+  var r = {
+    scRotulo: "Superfície corporal (" + (isMost ? "Mosteller" : "DuBois") + ")",
+    scTxt: "—", scConta: "Preencha peso e altura.", scOutra: "",
+    doseTxt: "—", doseConta: "Preencha peso, altura e dose.",
+    clcrTxt: "—", clcrConta: "Preencha peso, idade, sexo e creatinina.",
+    carboTxt: "—", carboConta: "Preencha os dados acima e a AUC alvo.",
+    avisos: avisos
+  };
+  if (okSc) {
+    r.scTxt = fmt(sc, 2) + " m²";
+    r.scConta = isMost
+      ? "Conta: raiz quadrada de (" + show(h) + " × " + show(w) + " ÷ 3600)"
+      : "Conta: 0,007184 × " + show(w) + " elevado a 0,425 × " + show(h) + " elevado a 0,725";
+    r.scOutra = isMost ? "Por DuBois: " + fmt(dub, 2) + " m²" : "Por Mosteller: " + fmt(most, 2) + " m²";
+    if (dose > 0) {
+      r.doseTxt = fmt(dose * sc, 1) + " mg";
+      r.doseConta = "Conta: " + show(dose) + " mg/m² × " + fmt(sc, 4) + " m² (SC sem arredondar)";
+    }
+  }
+
+  // Cockcroft-Gault e Calvert
+  var okCg = w > 0 && age > 0 && age < 140 && cr > 0 && (v.sexo === "M" || v.sexo === "F");
+  if (okCg) {
+    var clcr = (140 - age) * w / (72 * cr) * (v.sexo === "F" ? 0.85 : 1);
+    var usada = v.cap ? Math.min(clcr, 125) : clcr;
+    r.clcrTxt = fmt(clcr, 1) + " mL/min";
+    r.clcrConta = "Conta: (140 − " + show(age) + ") × " + show(w) + " ÷ (72 × " + show(cr) + ")" + (v.sexo === "F" ? " × 0,85" : "");
+    if (clcr > 125) {
+      avisos.push(v.cap
+        ? "Depuração calculada de " + fmt(clcr, 1) + " mL/min foi limitada a 125 mL/min no cálculo da carboplatina."
+        : "Depuração calculada acima de 125 mL/min e o limite está desligado: a FDA recomenda considerar o teto de 125 mL/min (dose máxima = AUC × 150).");
+    }
+    if (auc > 0) {
+      r.carboTxt = fmt(auc * (usada + 25), 1) + " mg";
+      r.carboConta = "Conta: " + show(auc) + " × (" + fmt(usada, 2) + " + 25)" + (v.cap && clcr > 125 ? " — depuração limitada a 125" : "");
+    }
+  }
+  return r;
+}
+
+// ===== TELA (os valores ficam só nestas variáveis, na memória da página) =====
+if (typeof document !== "undefined") (function () {
+  var el = function (id) { return document.getElementById(id); };
+  var campos = ["peso", "altura", "idade", "creat", "dose", "auc"];
+  var sexo = "", formula = "mosteller";
+
+  function atualizar() {
+    var r = calcular({
+      peso: el("peso").value, altura: el("altura").value, idade: el("idade").value,
+      creat: el("creat").value, dose: el("dose").value, auc: el("auc").value,
+      sexo: sexo, formula: formula, cap: el("cap").checked
+    });
+    ["scRotulo", "scTxt", "scConta", "scOutra", "doseTxt", "doseConta", "clcrTxt", "clcrConta", "carboTxt", "carboConta"]
+      .forEach(function (k) { el(k).textContent = r[k]; });
+    el("sexoM").setAttribute("aria-pressed", String(sexo === "M"));
+    el("sexoF").setAttribute("aria-pressed", String(sexo === "F"));
+    el("fMost").setAttribute("aria-pressed", String(formula === "mosteller"));
+    el("fDub").setAttribute("aria-pressed", String(formula === "dubois"));
+    var lista = el("avisosLista");
+    lista.textContent = "";
+    r.avisos.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; lista.appendChild(li); });
+    el("avisosBox").hidden = r.avisos.length === 0;
+  }
+  function limpar() {
+    campos.forEach(function (id) { el(id).value = ""; });
+    sexo = "";
+    atualizar();
+  }
+
+  campos.forEach(function (id) { el(id).addEventListener("input", atualizar); });
+  el("cap").addEventListener("change", atualizar);
+  el("sexoM").addEventListener("click", function () { sexo = "M"; atualizar(); });
+  el("sexoF").addEventListener("click", function () { sexo = "F"; atualizar(); });
+  el("fMost").addEventListener("click", function () { formula = "mosteller"; atualizar(); });
+  el("fDub").addEventListener("click", function () { formula = "dubois"; atualizar(); });
+  el("limpar").addEventListener("click", limpar);
+  // Ao voltar pela navegação do navegador, garante campos vazios (nada é restaurado).
+  window.addEventListener("pageshow", limpar);
+})();
+</script>
+</body>
+</html>
